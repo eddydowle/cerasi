@@ -18,12 +18,12 @@ library(reshape)
 library(heatmap3)
 
 #setwd("/media/raglandlab/ExtraDrive2/WinterLengthRnaSeq/RawData/HO_PE100_20160112_1mismatch/mappedcounts")
-setwd("~/Documents/Cerasi/Cerosi/salmonResults/")
+setwd("~/Documents/Cerasi/Cerosi/salmonResults2018MainTranscript/")
 
 #all cerosi work is now done with file that have had funny characters that end the sequence name removed, causing too many issues
 
 warnings()
-file_list<-list.files(pattern='*salmon.sf.cleanedNames')
+file_list<-list.files(pattern='*sf.cleanedNames')
 file_list
 table<-c()
 
@@ -48,7 +48,7 @@ for (file in file_list){
 #this one is flybase,swiss and trembl e-6
 cerosi.annotate<-read.table("../annotating/cerosi.annotated.pomonella.flybase.swissporte6.tophit.trembl.cleanedNames",sep="\t",header=TRUE,row.names=NULL,stringsAsFactors = FALSE,quote = "",fill=TRUE)
 
-table<-merge(cerosi.annotate,table,by="Name",all=TRUE)
+table<-right_join(cerosi.annotate,table,by="Name")
 
 
 table$c_Hi_3M_02_exp_count<-NULL
@@ -98,10 +98,10 @@ table.dge$samples
 plotMDS(table.dge)
 colnames(table.dge)
 
-plotMDS(table.dge) 
+#plotMDS(table.dge) 
 plotMDS(table.dge, top=500,pch = c(rep(15,4),rep(2,4),rep(19,4),rep(7,4),rep(5,4),rep(15,3),rep(2,4),rep(19,4),rep(7,4),rep(5,4)),col=c(rep("green4",20), rep("purple4",19)))
 #top left
-legend(-2,2,bty = "n",legend=(c("2 mo.","2.5 mo.","3.5 mo.","4 mo.","4.5 mo.","Hi","Low")),pch = c(2,15,19,5,7,18,18),col=c("black","black","black","black","black","green4","purple4"))
+legend(1.2,1.5,bty = "n",legend=(c("2 mo.","2.5 mo.","3.5 mo.","4 mo.","4.5 mo.","Hi","Low")),pch = c(2,15,19,5,7,18,18),col=c("black","black","black","black","black","green4","purple4"))
 
 #plotMDS(table.high.dge)
 #high
@@ -181,8 +181,8 @@ design
 table.dge<- estimateDisp(table.dge, design, robust=TRUE)
 table.dge$common.dispersion
 #
-sqrt(0.1379722)
-#0.37 coefficent of variation
+sqrt(0.0482975)
+#0.2197669 coefficent of variation
 
 
 #plot

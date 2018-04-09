@@ -44,10 +44,18 @@ for (file in file_list){
 #colnames(cerosi.annotate)[colnames(cerosi.annotate)=="X1transcript_id" ]<- "Name"
 
 #this one is flybase,swiss and trembl e-6
-cerosi.annotate<-read.table("../annotating/cerosi.annotated.pomonella.flybase.swissporte6.tophit.trembl",sep="\t",header=TRUE,row.names=NULL,stringsAsFactors = FALSE,quote = "",fill=TRUE)
+cerosi.annotate<-read.table("../annotating/cerosi.annotated.pomonella.flybase.swissporte6.tophit.trembl.cleanedNames",sep="\t",header=TRUE,row.names=NULL,stringsAsFactors = FALSE,quote = "",fill=TRUE)
 #count(unique(cerosi.annotate$Name))
 table1<-merge(cerosi.annotate,table,by="Name",all=TRUE)
 tail(table1)
+
+#sum(is.na(table1$c_Hi_2_5M_01_exp_count))
+#test<-table1[is.na(table1$c_Hi_2_5M_01_exp_count),]
+#test2<-table1[!is.na(table1$c_Hi_2_5M_01_exp_count),]
+#head(test$Name)
+#tail(test$Name)
+#tail(test)
+
 
 
 sum(table1$c_Hi_3M_02_exp_count) #18654155 = sum of mapped reads (8897637+9756519)
@@ -588,8 +596,8 @@ ggplot(df, aes(variable, value,group = Name)) +
 #making tables
 
 #Low
-annotation.cerosi<-table[,c(1,4,8,22,36,33,34)]
-colnames(table)
+annotation.cerosi<-table1[,c(1,4,8,22,36,33,34)]
+colnames(table1)
 table.low<-merge(annotation.cerosi,LogFC.table.Lowvs2,by="Name")
 FDR.table.Lowvs2$Lowest_FDR_TimeSeriesLowvs2<-apply(FDR.table.Lowvs2[,2:6],1,min)
 table.low<-merge(table.low,FDR.table.Lowvs2,by="Name")
@@ -624,7 +632,7 @@ table.low<-merge(table.low,Month.tags.FDR,by="Name")
 table.low<-merge(table.low,Alt.tags.FDR,by="Name")
 table.low<-merge(table.low,AltTimeinteraction.tags.FDR,by="Name")
 colnames(table.low)
-write.table(table.low,"BackToHigh2M/Table.cerosi.low",quote=FALSE,row.names=FALSE,sep="\t")
+write.table(table.low,"BackToHigh2M/Table.cerosi.low.fixannot",quote=FALSE,row.names=FALSE,sep="\t")
 #High
 
 table.high<-merge(annotation.cerosi,LogFC.table.Highvs2,by="Name")
@@ -647,7 +655,7 @@ table.high<-merge(table.high,Month.tags.FDR,by="Name")
 table.high<-merge(table.high,Alt.tags.FDR,by="Name")
 table.high<-merge(table.high,AltTimeinteraction.tags.FDR,by="Name")
 colnames(table.high)
-write.table(table.high,"BackToHigh2M/Table.cerosi.high",quote=FALSE,row.names=FALSE,sep="\t")
+write.table(table.high,"BackToHigh2M/Table.cerosi.high.fixannot",quote=FALSE,row.names=FALSE,sep="\t")
 
 
 
