@@ -4,9 +4,8 @@
 #biocLite("edgeR")
 #biocLite("locfit")
 
-#this edgeR comparisons work having removed the four low samples that seem to have totally different gene expression profiles from everybody else.
-#because three of these samples fall into the same month 3M low that month has been removed from both high and low samples
-#my thought is that these samples have broken diapuase. There expression pattern is just completely different from everybody else.
+#this is the orginal cerasi edgeR comparisons. However there is three samples at 3M low and one 2.5 at 3M low that are really funky looking so there is also a edgeR comparison with those out.
+
 
 library(edgeR)
 library(stringr)
@@ -16,6 +15,7 @@ library(plyr)
 library(ggplot2)
 library(reshape)
 library(heatmap3)
+library(dplyr)
 
 #setwd("/media/raglandlab/ExtraDrive2/WinterLengthRnaSeq/RawData/HO_PE100_20160112_1mismatch/mappedcounts")
 setwd("~/Documents/Cerasi/Cerosi/salmonResults2018MainTranscript/")
@@ -41,48 +41,105 @@ for (file in file_list){
     table<-merge(table,df2,by="Name") }
 }  
 
-
 #cerosi.annotate<-read.table("../annotating/cerosi.annotated.pomonella.flybase.swissport",sep="\t",header=TRUE,row.names=NULL,stringsAsFactors = FALSE,quote = "",fill=TRUE)
 #colnames(cerosi.annotate)[colnames(cerosi.annotate)=="X1transcript_id" ]<- "Name"
 
 #this one is flybase,swiss and trembl e-6
 cerosi.annotate<-read.table("../annotating/cerosi.annotated.pomonella.flybase.swissporte6.tophit.trembl.cleanedNames",sep="\t",header=TRUE,row.names=NULL,stringsAsFactors = FALSE,quote = "",fill=TRUE)
+#count(unique(cerosi.annotate$Name))
+#table1<-left_join(table,cerosi.annotate,by="Name")
+table1<-right_join(cerosi.annotate,table,by="Name")
 
-table<-right_join(cerosi.annotate,table,by="Name")
+#tail(table1)
+#head(table1)
 
+#sum(is.na(table1$c_Hi_2_5M_01_exp_count))
+#test<-table1[is.na(table1$c_Hi_2_5M_01_exp_count),]
+#test2<-table1[!is.na(table1$c_Hi_2_5M_01_exp_count),]
+#head(test$Name)
+#tail(test$Name)
+#tail(test)
 
-table$c_Hi_3M_02_exp_count<-NULL
-table$c_Hi_3M_03_exp_count<-NULL
-table$c_Hi_3M_04_exp_count<-NULL
-table$c_Hi_3M_05_exp_count<-NULL
+sum(table1$c_Hi_3M_02_exp_count) #
+sum(table1$c_Hi_3M_03_exp_count) #
+sum(table1$c_Hi_3M_04_exp_count) #
+sum(table1$c_Hi_3M_05_exp_count) #
 
-table$c_Lo_3M_01_exp_count<-NULL
-table$c_Lo_3M_02_exp_count<-NULL
-table$c_Lo_3M_03_exp_count<-NULL
-table$c_Lo_3M_04_exp_count<-NULL
+sum(table1$c_Hi_2M_01_exp_count) #
+sum(table1$c_Hi_2M_02_exp_count) #
+sum(table1$c_Hi_2M_03_exp_count) #
+sum(table1$c_Hi_2M_04_exp_count) #
 
-table$c_Lo_2_5M_03_exp_count<-NULL
+sum(table1$c_Lo_3M_01_exp_count) #
+sum(table1$c_Lo_3M_02_exp_count) #
+sum(table1$c_Lo_3M_03_exp_count) #
+sum(table1$c_Lo_3M_04_exp_count) #
+
 
 #########greg's filtering function represented in >= 50% of samples by at least one count#######
-filterMinCount<- function(x) {
-  pres<-x >=1
-  out=F
-  if ((sum(pres)/length(pres)) >= 0.5) {out=T}
-  return(out)
-}
+#filterMinCount<- function(x) {
+#  pres<-x >=1
+#  out=F
+#  if ((sum(pres)/length(pres)) >= 0.5) {out=T}
+#  return(out)
+#}
+
+
 
 #standard
-colnames(table)
-filterInd<-apply(table[,(-1:-38)],1,filterMinCount)
-table <- table[filterInd,] #191638
+colnames(table1)
+#filterInd<-apply(table1[,(-1:-38)],1,filterMinCount)
+#table <- table[filterInd,] #
+#table1 <- table1[filterInd,] #
+#tail(table1)
+#colnames(table1[,(-1:-38)])
+
+
+
+
+sum(table1$c_Hi_3M_02_exp_count) #
+sum(table1$c_Hi_3M_03_exp_count) #
+sum(table1$c_Hi_3M_04_exp_count) #
+sum(table1$c_Hi_3M_05_exp_count) #
+
+sum(table1$c_Hi_2M_01_exp_count) #
+sum(table1$c_Hi_2M_02_exp_count) #
+sum(table1$c_Hi_2M_03_exp_count) #
+sum(table1$c_Hi_2M_04_exp_count) #
+
+sum(table1$c_Lo_3M_01_exp_count) #
+sum(table1$c_Lo_3M_02_exp_count) #  
+sum(table1$c_Lo_3M_03_exp_count) #
+sum(table1$c_Lo_3M_04_exp_count) #
+
+colnames(table1)
+class(table1$c_Hi_2_5M_01_exp_count)
+sum(is.na(table1$c_Hi_2_5M_01_exp_count))
+grouping<-c(rep('Lo25M',4),rep('Lo2M',4),rep('Lo35M',4),rep('Lo3M',4),rep('Lo45M',4),rep('Lo4M',4),rep('Hi25M',4),rep('Hi2M',4),rep('Hi35M',4),rep('Hi3M',4),rep('Hi45M',4),rep('Hi4M',4))
+grouping
+
+colnames(table1)
+table.dge<-DGEList(counts=table1[,39:86],genes=table1[,(1:38)], group=grouping)
+table.dge<- calcNormFactors(table.dge)
+table.dge$samples
+
+keep<-rowSums(cpm(table.dge)>1) >=2
+y2 <- table.dge[keep, , keep.lib.sizes=FALSE]
+nrow(y2$counts) #45194
+
+keep <- filterByExpr(table.dge)
+#pre-filtering we have
+nrow(table.dge$counts)
+y <- table.dge[keep, , keep.lib.sizes=FALSE]
+nrow(y$counts) #56433
 
 ########create DGElist object#######
 
 #standard
 
-table.dge<-DGEList(counts=table[,39:77],genes=table[,(1:38)])
-table.dge<- calcNormFactors(table.dge)
-table.dge$samples
+#table.dge<-DGEList(counts=table[,39:86],genes=table[,(1:38)])
+#table.dge<- calcNormFactors(table.dge)
+#table.dge$samples
 
 #colnames(table.Filtered)
 
@@ -95,13 +152,17 @@ table.dge$samples
 #table.high.dge<-calcNormFactors(table.high.dge)
 #table.low.dge<-calcNormFactors(table.low.dge)
 
+#going to do filter by expression
+table.dge <- table.dge[keep, , keep.lib.sizes=FALSE]
+
+
 plotMDS(table.dge)
 colnames(table.dge)
 
 #plotMDS(table.dge) 
-plotMDS(table.dge, top=500,pch = c(rep(15,4),rep(2,4),rep(17,4),rep(19,4),rep(7,4),rep(5,4),rep(15,4),rep(2,4),rep(17,4),rep(19,4),rep(7,4),rep(5,4)),col=c(rep("green4",24), rep("purple4",24)))
-#top left
-legend(1.2,1.5,bty = "n",legend=(c("2 mo.","2.5 mo.","3 mo.","3.5 mo.","4 mo.","4.5 mo.","Hi","Low")),pch = c(2,15,19,17,5,7,18,18),col=c("black","black","black","black","black","green4","purple4"))
+plotMDS(table.dge, top=500,pch = c(rep(15,4),rep(2,4),rep(4,4),rep(19,4),rep(7,4),rep(5,4),rep(15,4),rep(2,4),rep(4,4),rep(19,4),rep(7,4),rep(5,4)),col=c(rep("green4",24), rep("purple4",24)))
+#bottom right
+legend(1.3,0.15,bty = "n",legend=(c("2 mo.","2.5 mo.","3 mo.","3.5 mo.","4 mo.","4.5 mo.","Hi","Low")),pch = c(2,15,19,4,5,7,18,18),col=c("black","black","black","black","black","black","green4","purple4"))
 
 #plotMDS(table.high.dge)
 #high
@@ -125,7 +186,7 @@ table.sampleData<-data.frame(Sample=colnames(table.dge),month,altitute)
 
 #model
 levels(month)
-month_<-factor(month, levels = c("2M", "2_5M","3M","3_5M","4M","4_5M"))
+month_<-factor(month, levels = c("2M", "2_5M", "3M","3_5M","4M","4_5M"))
 #altitute_<-factor(altitute,levels = c ("Low","High"))
 levels(month_)
 levels(altitute)
@@ -134,12 +195,13 @@ rownames(design) <- colnames(table.dge)
 design
 
 
+
 #########estimate disperson squareroot=coefficient of variation of biological variation#######
 table.dge<- estimateDisp(table.dge, design, robust=TRUE)
 table.dge$common.dispersion
-#
-sqrt(0.05678595)
-#0.238298 coefficent of variation
+#0.05510173
+sqrt(0.05510173)
+# 0.2347376 coefficent of variation
 
 
 #plot
@@ -159,6 +221,10 @@ fit <- glmFit(table.dge, design)
 
 
 colnames(design)
+#[1] "(Intercept)"            "month_2_5M"             "month_3M"              
+#[4] "month_3_5M"             "month_4M"               "month_4_5M"            
+#[7] "altituteLow"            "month_2_5M:altituteLow" "month_3M:altituteLow"  
+#[10] "month_3_5M:altituteLow" "month_4M:altituteLow"   "month_4_5M:altituteLow"
 
 #2_5 to two months low
 lrt2_5monthvs2low <- glmLRT(fit,contrast=c(0,1,0,0,0,0,0,1,0,0,0,0))
@@ -506,6 +572,7 @@ ggplot(df, aes(variable, value,group = Name)) +
 #Low
 annotation.cerosi<-table1[,c(1,4,8,22,36,33,34)]
 colnames(table1)
+colnames(annotation.cerosi)
 table.low<-merge(annotation.cerosi,LogFC.table.Lowvs2,by="Name")
 FDR.table.Lowvs2$Lowest_FDR_TimeSeriesLowvs2<-apply(FDR.table.Lowvs2[,2:6],1,min)
 table.low<-merge(table.low,FDR.table.Lowvs2,by="Name")
@@ -540,7 +607,7 @@ table.low<-merge(table.low,Month.tags.FDR,by="Name")
 table.low<-merge(table.low,Alt.tags.FDR,by="Name")
 table.low<-merge(table.low,AltTimeinteraction.tags.FDR,by="Name")
 colnames(table.low)
-write.table(table.low,"BackToHigh2M/Table.cerosi.low.fixannot",quote=FALSE,row.names=FALSE,sep="\t")
+write.table(table.low,"BackToHigh2M/Table.cerosi.low_cleanbyedgeRdesign",quote=FALSE,row.names=FALSE,sep="\t")
 #High
 
 table.high<-merge(annotation.cerosi,LogFC.table.Highvs2,by="Name")
@@ -563,25 +630,34 @@ table.high<-merge(table.high,Month.tags.FDR,by="Name")
 table.high<-merge(table.high,Alt.tags.FDR,by="Name")
 table.high<-merge(table.high,AltTimeinteraction.tags.FDR,by="Name")
 colnames(table.high)
-write.table(table.high,"BackToHigh2M/Table.cerosi.high.fixannot",quote=FALSE,row.names=FALSE,sep="\t")
+write.table(table.high,"BackToHigh2M/Table.cerosi.high_cleanbyedgeRdesign",quote=FALSE,row.names=FALSE,sep="\t")
 
-
+head(table.high)
+sum(is.na(table.high$Pomonella_gene_id))
+nrow(table.high)
 
 ########Heatmaps#########
-setwd("~/Documents/Cerasi/Cerosi/salmonResults/")
+#setwd("~/Documents/Cerasi/Cerosi/salmonResults/")
 library(RColorBrewer)
 library(heatmap3)
 library(heatmap.plus)
 library(gplots)
-cerosi.high<-read.table("Table.cerosi.high",sep="\t",header=TRUE,row.names=NULL,stringsAsFactors = FALSE)
-cerosi.low<-read.table("Table.cerosi.low",sep="\t",header=TRUE,row.names=NULL,stringsAsFactors = FALSE)
+cerosi.high<-read.table("BackToHigh2M/Table.cerosi.high_cleanbyedgeRdesign",sep="\t",header=TRUE,row.names=NULL,stringsAsFactors = FALSE)
+cerosi.low<-read.table("BackToHigh2M/Table.cerosi.low_cleanbyedgeRdesign",sep="\t",header=TRUE,row.names=NULL,stringsAsFactors = FALSE)
 colnames(cerosi.high)
 
 colnames(cerosi.low)
 test<-merge(cerosi.high,cerosi.low,by="Name")
 colnames(test)
 
-seq<-as.data.frame(test[c(6,8:12,65:69)])
+#eq<-as.data.frame(test[c(6,8:12,65:69)])
+
+#seq<-as.data.frame(test[c(6,8:12,63:67)])
+colnames(test)
+seq<-as.data.frame(test[c(6,8:12,52:56)])
+
+seq
+colnames(seq)
 seq<-seq[!with(seq,is.na(gene_id_pom_blast_tophit.x)), ]
 
 #aggregate based on pom gene ID
@@ -632,5 +708,235 @@ heatmap.2(seq.true.mat,col=brewer.pal(10,"PiYG"),trace="none",Colv=F,labRow=F,ma
 dev.off()
 
 #end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#######contrasts between in high and low######
+
+#high
+monthhighlowsep<-factor(c(rep("2_5M",4),rep("2M",4),rep("3_5M",4),rep("3M",4),rep("4_5M",4),rep("4M",4)))
+
+table.sampleDatahigh<-data.frame(Sample=colnames(table.high.dge),monthhighlowsep)
+
+#model
+levels(monthhighlowsep)
+monthHigh_<-factor(monthhighlowsep, levels = c("2M", "2_5M", "3M","3_5M","4M","4_5M"))
+levels(monthHigh_)
+designHigh <- model.matrix(~monthHigh_)
+rownames(designHigh) <- colnames(table.high.dge)
+designHigh
+
+
+#########estimate disperson squareroot=coefficient of variation of biological variation#######
+table.high.dge<- estimateDisp(table.high.dge, designHigh, robust=TRUE)
+table.high.dge$common.dispersion
+#0.1347917
+sqrt(0.1347917)
+#0.367 coefficent of variation
+
+
+#plot
+plotBCV(table.high.dge)
+
+#can look at trended dispersion that is used for QL (Quasi-Likelihood pipeline)
+fit <- glmFit(table.high.dge, designHigh)
+colnames(designHigh)
+
+fit <- glmQLFit(table.high.dge, designHigh)
+plotQLDisp(fit)
+
+
+##############contrasts##################
+
+fit <- glmFit(table.high.dge, designHigh)
+
+colnames(designHigh)
+#[1] "(Intercept)"    "monthHigh_2_5M" "monthHigh_3M"   "monthHigh_3_5M" "monthHigh_4M"   "monthHigh_4_5M"
+
+#2_5 to two months
+lrtHigh2_5monthvs2 <- glmLRT(fit,coef=2)
+
+#3 to two months
+lrtHigh3monthvs2 <- glmLRT(fit,coef=3)
+
+#3_5 to two months
+lrtHigh3_5monthvs2 <- glmLRT(fit,coef=4)
+
+#4 to two months
+lrtHigh4monthvs2 <- glmLRT(fit,coef=5)
+
+#4_5 to two months
+lrtHigh4_5monthvs2 <- glmLRT(fit,coef=6)
+
+#3 to 2_5 months
+lrtHigh3monthvs2_5 <- glmLRT(fit,contrast=c(0,-1,1,0,0,0))
+
+#3_5 to 2_5 months
+lrtHigh3_5monthvs2_5 <- glmLRT(fit,contrast=c(0,-1,0,1,0,0))
+
+#4 to 2_5 months
+lrtHigh4monthvs2_5 <- glmLRT(fit,contrast=c(0,-1,0,0,1,0))
+
+#4_5 to 2_5 months
+lrtHigh4_5monthvs2_5 <- glmLRT(fit,contrast=c(0,-1,0,0,0,1))
+
+#3_5 to 3 months
+lrtHigh3_5monthvs3 <- glmLRT(fit,contrast=c(0,0,-1,1,0,0))
+
+#4 to 3 months
+lrtHigh4monthvs3 <- glmLRT(fit,contrast=c(0,0,-1,0,1,0))
+
+#4_5 to 3 months
+lrtHigh4_5monthvs3 <- glmLRT(fit,contrast=c(0,0,-1,0,0,1))
+
+#4 to 3_5 months
+lrtHigh4monthvs3_5 <- glmLRT(fit,contrast=c(0,0,0,-1,1,0))
+
+#4_5 to 3_5 months
+lrtHigh4_5monthvs3_5 <- glmLRT(fit,contrast=c(0,0,0,-1,0,1))
+
+#4_5 to 4 months
+lrtHigh4_5monthvs4 <- glmLRT(fit,contrast=c(0,0,0,0,-1,1))
+
+#between any months
+lrtanydiffinHighMonths <- glmLRT(fit,coef=2:6)
+
+
+#low
+
+monthhighlowsep<-factor(c(rep("2_5M",4),rep("2M",4),rep("3_5M",4),rep("3M",4),rep("4_5M",4),rep("4M",4)))
+
+table.sampleDatalow<-data.frame(Sample=colnames(table.low.dge),monthhighlowsep)
+
+#model
+levels(monthhighlowsep)
+monthLow_<-factor(monthhighlowsep, levels = c("2M", "2_5M", "3M","3_5M","4M","4_5M"))
+levels(monthLow_)
+designLow <- model.matrix(~monthLow_)
+rownames(designLow) <- colnames(table.low.dge)
+designLow
+
+#> designLow
+#(Intercept) monthLow_2_5M monthLow_3M monthLow_3_5M monthLow_4M monthLow_4_5M
+#c_Lo_2_5M_01_exp_count           1             1           0             0           0             0
+#c_Lo_2_5M_02_exp_count           1             1           0             0           0             0
+#c_Lo_2_5M_03_exp_count           1             1           0             0           0             0
+#c_Lo_2_5M_04_exp_count           1             1           0             0           0             0
+#c_Lo_2M_01_exp_count             1             0           0             0           0             0
+#c_Lo_2M_02_exp_count             1             0           0             0           0             0
+#c_Lo_2M_03_exp_count             1             0           0             0           0             0
+#c_Lo_2M_04_exp_count             1             0           0             0           0             0
+#c_Lo_3_5M_01_exp_count           1             0           0             1           0             0
+#c_Lo_3_5M_02_exp_count           1             0           0             1           0             0
+#c_Lo_3_5M_03_exp_count           1             0           0             1           0             0
+#c_Lo_3_5M_04_exp_count           1             0           0             1           0             0
+#c_Lo_3M_01_exp_count             1             0           1             0           0             0
+#c_Lo_3M_02_exp_count             1             0           1             0           0             0
+#c_Lo_3M_03_exp_count             1             0           1             0           0             0
+#c_Lo_3M_04_exp_count             1             0           1             0           0             0
+#c_Lo_4_5M_01_exp_count           1             0           0             0           0             1
+#c_Lo_4_5M_02_exp_count           1             0           0             0           0             1
+#c_Lo_4_5M_03_exp_count           1             0           0             0           0             1
+#c_Lo_4_5M_04_exp_count           1             0           0             0           0             1
+#c_Lo_4M_01_exp_count             1             0           0             0           1             0
+#c_Lo_4M_02_exp_count             1             0           0             0           1             0
+#c_Lo_4M_03_exp_count             1             0           0             0           1             0
+#c_Lo_4M_04_exp_count             1             0           0             0           1             0
+
+#########estimate disperson squareroot=coefficient of variation of biological variation#######
+table.low.dge<- estimateDisp(table.low.dge, designLow, robust=TRUE)
+table.low.dge$common.dispersion
+#0.1744747
+sqrt(0.1744747)
+#0.4177 coefficent of variation
+
+
+#plot
+plotBCV(table.low.dge)
+
+#can look at trended dispersion that is used for QL (Quasi-Likelihood pipeline)
+fit <- glmFit(table.low.dge, designLow)
+colnames(designLow)
+
+fit <- glmQLFit(table.low.dge, designLow)
+plotQLDisp(fit)
+
+
+##############contrasts##################
+
+fit <- glmFit(table.low.dge, designLow)
+
+colnames(designLow)
+#[1] "(Intercept)"   "monthLow_2_5M" "monthLow_3M"   "monthLow_3_5M" "monthLow_4M"   "monthLow_4_5M"
+
+#2_5 to two months
+lrtLow2_5monthvs2 <- glmLRT(fit,coef=2)
+
+#3 to two months
+lrtLow3monthvs2 <- glmLRT(fit,coef=3)
+
+#3_5 to two months
+lrtLow3_5monthvs2 <- glmLRT(fit,coef=4)
+
+#4 to two months
+lrtLow4monthvs2 <- glmLRT(fit,coef=5)
+
+#4_5 to two months
+lrtLow4_5monthvs2 <- glmLRT(fit,coef=6)
+
+#3 to 2_5 months
+lrtLow3monthvs2_5 <- glmLRT(fit,contrast=c(0,-1,1,0,0,0))
+
+#3_5 to 2_5 months
+lrtLow3_5monthvs2_5 <- glmLRT(fit,contrast=c(0,-1,0,1,0,0))
+
+#4 to 2_5 months
+lrtLow4monthvs2_5 <- glmLRT(fit,contrast=c(0,-1,0,0,1,0))
+
+#4_5 to 2_5 months
+lrtLow4_5monthvs2_5 <- glmLRT(fit,contrast=c(0,-1,0,0,0,1))
+
+#3_5 to 3 months
+lrtLow3_5monthvs3 <- glmLRT(fit,contrast=c(0,0,-1,1,0,0))
+
+#4 to 3 months
+lrtLow4monthvs3 <- glmLRT(fit,contrast=c(0,0,-1,0,1,0))
+
+#4_5 to 3 months
+lrtLow4_5monthvs3 <- glmLRT(fit,contrast=c(0,0,-1,0,0,1))
+
+#4 to 3_5 months
+lrtLow4monthvs3_5 <- glmLRT(fit,contrast=c(0,0,0,-1,1,0))
+
+#4_5 to 3_5 months
+lrtLow4_5monthvs3_5 <- glmLRT(fit,contrast=c(0,0,0,-1,0,1))
+
+#4_5 to 4 months
+lrtLow4_5monthvs4 <- glmLRT(fit,contrast=c(0,0,0,0,-1,1))
+
+#between any months
+lrtanydiffinLowMonths <- glmLRT(fit,coef=2:6)
 
 

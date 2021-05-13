@@ -115,11 +115,23 @@ sum(table1$c_Lo_3M_04_exp_count) #
 colnames(table1)
 class(table1$c_Hi_2_5M_01_exp_count)
 sum(is.na(table1$c_Hi_2_5M_01_exp_count))
+grouping<-c(rep('Lo25M',4),rep('Lo2M',4),rep('Lo35M',4),rep('Lo3M',4),rep('Lo45M',4),rep('Lo4M',4),rep('Hi25M',4),rep('Hi2M',4),rep('Hi35M',4),rep('Hi3M',4),rep('Hi45M',4),rep('Hi4M',4))
+grouping
 
 colnames(table1)
-table.dge<-DGEList(counts=table1[,39:86],genes=table1[,(1:38)])
+table.dge<-DGEList(counts=table1[,39:86],genes=table1[,(1:38)], group=grouping)
 table.dge<- calcNormFactors(table.dge)
 table.dge$samples
+
+keep<-rowSums(cpm(table.dge)>1) >=2
+y2 <- table.dge[keep, , keep.lib.sizes=FALSE]
+nrow(y2$counts) 
+
+keep <- filterByExpr(table.dge)
+#pre-filtering we have
+nrow(table.dge$counts)
+y <- table.dge[keep, , keep.lib.sizes=FALSE]
+nrow(y$counts)
 
 ########create DGElist object#######
 
